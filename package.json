@@ -1,0 +1,24 @@
+{
+  "name": "komisite",
+  "version": "2.0.0",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build:frontend": "cd frontend && npm install && npm run build && rm -rf ../frontend_build && mkdir -p ../frontend_build && cp -r dist/* ../frontend_build/"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2",
+    "better-sqlite3": "^9.4.5",
+    "dayjs": "^1.11.11",
+    "express-rate-limit": "^7.3.0",
+    "exceljs": "^4.4.0",
+    "pdfkit": "^0.15.0",
+    "morgan": "^1.10.0",
+    "helmet": "^7.1.0",
+    "dotenv": "^16.4.5"
+  }
+}
