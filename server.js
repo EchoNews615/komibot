@@ -16,6 +16,32 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const SITE_API_KEY = process.env.SITE_API_KEY || 'change-this-key';
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '*').split(',');
+// Configuração da API_KEY
+const SITE_API_KEY = process.env.API_KEY || "MinhaChaveUltraSecreta123";
+const axios = require("axios");
+
+const SITE_URL = process.env.SITE_URL || "https://komiadmin.22web.org";
+
+// Middleware global para validar requisições do bot
+app.use("/api", (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader || authHeader !== `Bearer ${SITE_API_KEY}`) {
+    return res.status(403).json({ error: "Acesso negado: chave inválida." });
+  }
+  next();
+});
+
+await axios.post(`${SITE_URL}/api/logs`, {
+  user_id: member.id,
+  user_tag: member.user.tag,
+  message: message.content,
+  channel: message.channel.name,
+  timestamp: new Date().toISOString()
+}, {
+  headers: {
+    Authorization: `Bearer ${SITE_API_KEY}`
+  }
+});
 
 app.use(helmet());
 app.use(morgan('tiny'));
