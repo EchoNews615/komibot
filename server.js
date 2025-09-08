@@ -24,12 +24,6 @@ app.use(cors({ origin: ALLOWED_ORIGINS.includes('*') ? true : ALLOWED_ORIGINS })
 const limiter = rateLimit({ windowMs: 60 * 1000, max: 200 });
 app.use(limiter);
 
-function checkKey(req, res, next){
-  const key = req.headers['x-api-key'];
-  if (key !== SITE_API_KEY) return res.status(401).json({ error: 'unauthorized' });
-  next();
-}
-
 // DB
 const dataDir = path.join(__dirname, 'data');
 const exportDir = path.join(__dirname, 'exports');
