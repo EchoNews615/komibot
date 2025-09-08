@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ficha do Membro - KomiBot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: radial-gradient(1200px 600px at 20% -10%, rgba(99,102,241,.15), transparent), linear-gradient(135deg, #0f172a, #1e293b); font-family: 'Inter', sans-serif; }
+    .card { background: #0f172a80; backdrop-filter: blur(6px); border: 1px solid #334155; border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.45); }
+    .chip { padding: 0.25rem .6rem; border-radius: 999px; font-size: .75rem; }
+  </style>
+</head>
+<body class="text-white min-h-screen">
+  <header class="bg-gray-900/80 border-b border-gray-800 sticky top-0 backdrop-blur z-10">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="/" class="text-indigo-300 hover:text-indigo-200">&larr; Voltar</a>
+      <h1 class="text-2xl font-bold text-indigo-400">Ficha do Membro</h1>
+      <div class="opacity-0">.</div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+    <!-- Header Card -->
+    <section class="card p-6 grid md:grid-cols-3 gap-6">
+      <div class="space-y-2">
+        <h2 id="user-name" class="text-2xl font-semibold"></h2>
+        <p id="user-id" class="text-gray-400 text-sm"></p>
+        <div id="status-chips" class="flex gap-2 flex-wrap"></div>
+      </div>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="p-4 rounded-lg bg-gray-800/60 text-center">
+          <div id="stat-warns" class="text-3xl font-bold text-indigo-400">0</div>
+          <div class="text-gray-400 text-sm mt-1">Advertências</div>
+        </div>
+        <div class="p-4 rounded-lg bg-gray-800/60 text-center">
+          <div id="stat-mutes" class="text-3xl font-bold text-yellow-400">0</div>
+          <div class="text-gray-400 text-sm mt-1">Mutes</div>
+        </div>
+        <div class="p-4 rounded-lg bg-gray-800/60 text-center">
+          <div id="stat-bans" class="text-3xl font-bold text-red-400">0</div>
+          <div class="text-gray-400 text-sm mt-1">Bans</div>
+        </div>
+      </div>
+      <div class="flex items-end justify-end">
+        <div class="space-x-3">
+          <button id="btn-export" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded">Exportar mês atual</button>
+          <button id="btn-refresh" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded">Atualizar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Timeline -->
+    <section class="grid md:grid-cols-2 gap-6">
+      <div class="card p-6">
+        <h3 class="text-lg font-semibold text-indigo-300 mb-4">Timeline de Punições</h3>
+        <ul id="timeline" class="space-y-3"></ul>
+      </div>
+      <div class="card p-6">
+        <h3 class="text-lg font-semibold text-indigo-300 mb-4">Mensagens Problemáticas</h3>
+        <div class="mb-3">
+          <input id="search-log" placeholder="Buscar no conteúdo..." class="bg-gray-800 rounded px-3 py-2 w-full outline-none border border-gray-700 focus:border-indigo-500">
+        </div>
+        <ul id="logs" class="space-y-3"></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="py-8 text-center text-gray-500 text-sm">KomiBot © 2025</footer>
+
+  <script>
+    const API = location.origin.replace(/\/$/, '');
+
+    function q(k){ return new URLSearchParams(location.search).get(k); }
+    function time(s){ const d = new Date(s); return d.toLocaleDateString() + ' ' + d.toLocaleTimeString(); }
+    function chip(label, cls){ const span = document.createElement('span'); span.className = 'chip ' + cls; span.textContent = label; return span; }
+
+    async function load(){
+      const id = q('id');
+      if (!id){ document.body.innerHTML = '<div class="p-8 text-center">ID não informado.</div>'; return; }
+      const res = await fetch(`${API}/api/member/${id}`);
+      const j = await res.json();
+
+      document.getElementById('user-name').textContent = j.member.name || '(sem nome)';
+      document.getElementById('user-id').textContent = 'ID: ' + j.member.id;
+
+      // chips
+      const chips = document.getElementById('status-chips');
+      chips.innerHTML = '';
+      if (j.stats.activeMute) chips.appendChild(chip('Mute ativo até ' + time(j.stats.activeMute.endAt), 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40'));
+      if (j.stats.lastPunishment) chips.appendChild(chip('Última: ' + j.stats.lastPunishment.type + ' • ' + time(j.stats.lastPunishment.timestamp), 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'));
+      if (j.stats.tickets) chips.appendChild(chip(j.stats.tickets + ' tickets', 'bg-green-500/20 text-green-300 border border-green-500/40'));
+
+      // stats
+      document.getElementById('stat-warns').textContent = j.stats.warns;
+      document.getElementById('stat-mutes').textContent = j.stats.mutes;
+      document.getElementById('stat-bans').textContent  = j.stats.bans;
+
+      // timeline (punishments mixed)
+      const all = [...j.punishments.warns, ...j.punishments.mutes, ...j.punishments.bans].sort((a,b)=>b.id-a.id);
+      const tl = document.getElementById('timeline'); tl.innerHTML='';
+      all.forEach(p => {
+        const li = document.createElement('li');
+        li.className = 'p-4 bg-gray-800/60 rounded border border-gray-700';
+        li.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="font-medium">${p.type.toUpperCase()}</div>
+            <div class="text-xs text-gray-400">${time(p.timestamp)}</div>
+          </div>
+          <div class="text-sm text-gray-300 mt-1">Canal: #${p.channelName || p.channelId || '-'}</div>
+          ${p.type==='mute' && p.durationHours ? `<div class="text-sm text-yellow-300 mt-1">Duração: ${p.durationHours}h ${p.endAt?`• até ${time(p.endAt)}`:''}</div>` : ''}
+          ${p.reason ? `<div class="text-sm text-gray-400 mt-2 italic">“${p.reason}”</div>` : ''}
+        `;
+        tl.appendChild(li);
+      });
+
+      // logs (messages)
+      const logs = document.getElementById('logs'); logs.innerHTML='';
+      const search = document.getElementById('search-log');
+      function renderLogs(){
+        logs.innerHTML='';
+        const q = (search.value||'').toLowerCase();
+        j.logs.filter(l => (l.message||'').toLowerCase().includes(q)).forEach(l => {
+          const li = document.createElement('li');
+          li.className = 'p-4 bg-gray-800/60 rounded border border-gray-700';
+          li.innerHTML = `
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-gray-400">#${l.channelName || l.channelId || '-'}</div>
+              <div class="text-xs text-gray-500">${time(l.timestamp)}</div>
+            </div>
+            <div class="mt-2 text-gray-200 whitespace-pre-wrap">${(l.message||'').replace(/[<>]/g, '')}</div>
+          `;
+          logs.appendChild(li);
+        });
+      }
+      search.addEventListener('input', renderLogs);
+      renderLogs();
+
+      // Export button
+      document.getElementById('btn-export').addEventListener('click', async () => {
+        const ym = new Date().toISOString().slice(0,7);
+        const res = await fetch(`${API}/api/export/monthly`, { method:'POST', headers:{'Content-Type':'application/json','x-api-key':'${"${"}SITE_API_KEY?:""}'}, body: JSON.stringify({ month: ym }) });
+        const j = await res.json().catch(()=>({}));
+        alert(j.ok ? 'Export solicitado' : 'Falha na exportação');
+      });
+
+      document.getElementById('btn-refresh').addEventListener('click', load);
+    }
+
+    // init
+    load();
+  </script>
+</body>
+</html>

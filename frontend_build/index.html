@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel de Punições - KomiBot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: linear-gradient(135deg, #0f172a, #1e293b); font-family: 'Inter', sans-serif; }
+    .card { background: #1e293b; border-radius: 1rem; box-shadow: 0 8px 20px rgba(0,0,0,0.4); transition: transform 0.2s ease; }
+    .card:hover { transform: translateY(-3px); }
+  </style>
+</head>
+<body class="text-white min-h-screen flex flex-col">
+<header class="bg-gray-900 shadow-lg">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <h1 class="text-2xl font-bold text-indigo-400">⚡ Painel KomiBot</h1>
+    <nav class="space-x-6">
+      <a href="#dashboard" class="hover:text-indigo-300">Dashboard</a>
+      <a href="#members" class="hover:text-indigo-300">Membros</a>
+      <a href="#reports" class="hover:text-indigo-300">Relatórios</a>
+    </nav>
+  </div>
+</header>
+
+<main class="flex-1 max-w-7xl mx-auto w-full px-6 py-8 space-y-10">
+  <section id="dashboard" class="grid grid-cols-2 md:grid-cols-4 gap-6">
+    <div class="card p-6 text-center"><p id="card-warns" class="text-4xl font-bold text-indigo-400">0</p><p class="text-gray-400 mt-2">Advertências</p></div>
+    <div class="card p-6 text-center"><p id="card-mutes" class="text-4xl font-bold text-yellow-400">0</p><p class="text-gray-400 mt-2">Mutes</p></div>
+    <div class="card p-6 text-center"><p id="card-tickets" class="text-4xl font-bold text-green-400">0</p><p class="text-gray-400 mt-2">Tickets Fechados</p></div>
+    <div class="card p-6 text-center"><p id="card-bans" class="text-4xl font-bold text-red-400">0</p><p class="text-gray-400 mt-2">Bans</p></div>
+  </section>
+
+  <section id="members">
+    <h2 class="text-xl font-semibold mb-4 text-indigo-300">👥 Membros</h2>
+    <div class="card p-6 overflow-x-auto">
+      <div class="mb-4 flex gap-3 items-center">
+        <input id="search" placeholder="Buscar por nome/ID..." class="bg-gray-800 rounded px-3 py-2 w-full outline-none border border-gray-700 focus:border-indigo-500"/>
+        <button id="reload" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded">Recarregar</button>
+      </div>
+      <table class="table-auto w-full border-collapse">
+        <thead>
+          <tr class="text-indigo-400 border-b border-gray-700">
+            <th class="text-left py-2 px-4">Usuário</th>
+            <th class="text-left py-2 px-4">Advertências</th>
+            <th class="text-left py-2 px-4">Mutes</th>
+            <th class="text-left py-2 px-4">Bans</th>
+            <th class="text-left py-2 px-4">Tickets</th>
+            <th class="text-left py-2 px-4">Última Punição</th>
+            <th class="text-left py-2 px-4">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="members-table"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="reports">
+    <h2 class="text-xl font-semibold mb-4 text-indigo-300">📂 Relatórios Mensais</h2>
+    <div class="card p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <input id="month" type="month" class="bg-gray-800 rounded px-3 py-2 outline-none border border-gray-700 focus:border-indigo-500"/>
+        <button id="export" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded">Gerar Exportação</button>
+      </div>
+      <ul id="report-links" class="space-y-2 text-indigo-400"></ul>
+    </div>
+  </section>
+</main>
+
+<footer class="bg-gray-900 py-6 mt-10">
+  <div class="max-w-7xl mx-auto px-6 text-gray-500 text-sm text-center">
+    Feito com ❤️ por <span class="text-indigo-400">NanyDev</span> • KomiBot © 2025
+  </div>
+</footer>
+
+<script>
+  const API = location.origin.replace(/\/$/, '') // mesmo host
+  const GUILD_ID = ""; // opcional
+
+  async function fetchMembers(){
+    const url = GUILD_ID ? `${API}/api/members?guild=${GUILD_ID}` : `${API}/api/members`;
+    const res = await fetch(url);
+    return res.json();
+  }
+
+  function fmtLast(p){
+    if (!p) return '-';
+    const d = new Date(p.timestamp);
+    return `${p.type} - ${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
+  }
+
+  function renderMembers(list){
+    const tbody = document.getElementById('members-table');
+    tbody.innerHTML = '';
+    let totalWarns = 0, totalMutes = 0, totalBans = 0, totalTickets = 0;
+    for (const m of list){
+      totalWarns += m.total_warns||0;
+      totalMutes += m.total_mutes||0;
+      totalBans  += m.total_bans||0;
+      totalTickets += m.tickets||0;
+      const tr = document.createElement('tr');
+      tr.className = "border-b border-gray-800 hover:bg-gray-800/50";
+      tr.innerHTML = `
+        <td class="py-2 px-4">${m.user_tag}</td>
+        <td class="py-2 px-4">${m.total_warns||0}</td>
+        <td class="py-2 px-4">${m.total_mutes||0}</td>
+        <td class="py-2 px-4">${m.total_bans||0}</td>
+        <td class="py-2 px-4">${m.tickets||0}</td>
+        <td class="py-2 px-4">${fmtLast(m.last_punishment)}</td>
+        <td class="py-2 px-4">
+          <a href="member.html?id=${m.user_id}" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1 rounded">Ver/a>
+        </td>`;
+      tbody.appendChild(tr);
+    }
+    document.getElementById("card-warns").innerText = totalWarns;
+    document.getElementById("card-mutes").innerText = totalMutes;
+    document.getElementById("card-bans").innerText  = totalBans;
+    document.getElementById("card-tickets").innerText = totalTickets;
+  }
+
+  async function load(){
+    let list = await fetchMembers();
+    const search = document.getElementById('search');
+    function apply(){
+      const q = (search.value||'').toLowerCase();
+      renderMembers(list.filter(m => (m.user_tag||'').toLowerCase().includes(q) || (m.user_id||'').includes(q)));
+    }
+    search.addEventListener('input', apply);
+    document.getElementById('reload').addEventListener('click', async ()=>{ list = await fetchMembers(); apply(); });
+    apply();
+
+    const month = document.getElementById('month');
+    month.value = new Date().toISOString().slice(0,7);
+    const links = document.getElementById('report-links');
+    document.getElementById('export').addEventListener('click', async ()=>{
+      const ym = month.value;
+      const res = await fetch(`${API}/api/export/monthly`, { method:'POST', headers:{'Content-Type':'application/json','x-api-key':'${"${"}SITE_API_KEY?:""}'}, body: JSON.stringify({ month: ym }) });
+      const j = await res.json().catch(()=>({}));
+      links.innerHTML = '';
+      if (j.files){
+        ['xlsx','pdf'].forEach(ext => {
+          if (j.files[ext]){
+            const li = document.createElement('li');
+            li.innerHTML = `<a class="hover:underline" href="${j.files[ext]}">${ym.toUpperCase()} • baixar ${ext.toUpperCase()}</a>`;
+            links.appendChild(li);
+          }
+        });
+      }
+    });
+  }
+  load().catch(console.error);
+</script>
+</body>
+</html>
