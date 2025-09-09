@@ -22,6 +22,8 @@ function checkKey(req, res, next) {
   return next();
 }
 
+app.use(express.static(path.join(__dirname, "frontend_build")));
+
 app.use(helmet());
 app.use(morgan('tiny'));
 app.use(bodyParser.json({ limit: '2mb' }));
@@ -78,8 +80,15 @@ db.exec(`
 `);
 
 // Static
-const staticPath = path.join(__dirname, 'frontend_build');
-if (fs.existsSync(staticPath)) app.use('/', express.static(staticPath, { extensions: ['html'] }));
+const staticPath = path.join(__dirname, "frontend_build");
+if (fs.existsSync(staticPath)) {
+  app.use(express.static(staticPath, { extensions: ["html"] }));
+}
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(staticPath, "index.html"));
+});
+
 
 // API
 // --- Policy helpers ---
