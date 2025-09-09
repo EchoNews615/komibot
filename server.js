@@ -17,6 +17,11 @@ const PORT = process.env.PORT || 3000;
 const SITE_API_KEY = process.env.SITE_API_KEY || 'MinhaChaveUltraSecreta123!';
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '*').split(',');
 
+function checkKey(req, res, next) {
+  // Autenticação desativada temporariamente
+  return next();
+}
+
 app.use(helmet());
 app.use(morgan('tiny'));
 app.use(bodyParser.json({ limit: '2mb' }));
