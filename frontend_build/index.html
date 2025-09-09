@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>KomiBot Dashboard</title>
+  <meta name="description" content="Painel de administração - KomiBot" />
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app" class="app">
+    <header class="header">
+      <div class="brand">
+        <img src="" alt="" class="logo" aria-hidden="true"/>
+        <div>
+          <h1>KomiBot</h1>
+          <p class="sub">Painel de Moderation &amp; Members</p>
+        </div>
+      </div>
+
+      <div class="controls">
+        <label class="lbl">Atualizar a cada
+          <select id="interval" aria-label="interval">
+            <option value="0">Desativado</option>
+            <option value="1000">1s</option>
+            <option value="2000">2s</option>
+            <option value="5000" selected>5s</option>
+            <option value="10000">10s</option>
+            <option value="30000">30s</option>
+            <option value="60000">1min</option>
+          </select>
+        </label>
+
+        <button id="refreshBtn" class="btn">Atualizar</button>
+
+        <button id="themeBtn" class="btn outline">🌙</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="stats">
+        <div class="card">
+          <div class="card-title">Membros</div>
+          <div id="countMembers" class="card-value">—</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Warns totais</div>
+          <div id="totalWarns" class="card-value">—</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Mutes totais</div>
+          <div id="totalMutes" class="card-value">—</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Tickets</div>
+          <div id="totalTickets" class="card-value">—</div>
+        </div>
+      </section>
+
+      <section class="members">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Membros</h2>
+            <div class="search-wrap">
+              <input id="search" placeholder="Pesquisar por nome ou id..." />
+            </div>
+          </div>
+
+          <div class="table-wrap" id="tableWrap">
+            <table id="membersTable" class="members-table" role="grid" aria-live="polite">
+              <thead>
+                <tr>
+                  <th>Avatar</th>
+                  <th>Nome / Tag</th>
+                  <th>ID</th>
+                  <th>Warns</th>
+                  <th>Mutes</th>
+                  <th>Bans</th>
+                  <th>Tickets</th>
+                </tr>
+              </thead>
+              <tbody id="membersBody">
+                <tr><td colspan="7" class="muted">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="panel-foot">
+            <small class="muted">Última atualização: <span id="lastUpdate">—</span></small>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div>Feito com ❤️ por <strong>NanyDev</strong></div>
+      <div class="links">
+        <a href="/privacy">Política de Privacidade</a>
+        <a href="https://discord.com" target="_blank" rel="noopener">Contato</a>
+      </div>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
